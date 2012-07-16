@@ -22,6 +22,7 @@
 #include "node_dtrace.h"
 #include "node_win32_etw_provider.h"
 #include "node_etw_provider.h"
+#include "node_win32_etw_provider-inl.h"
 
 namespace node {
 
@@ -33,6 +34,39 @@ EventRegisterFunc event_register;
 EventUnregisterFunc event_unregister;
 EventWriteFunc event_write;
 int events_enabled;
+
+// callback from V8 module passes symbol and address info for stack walk resolution
+bool CodeAddressNotification(int operation,
+                             const void* addr1,
+                             int len,
+                             const char* symbol,
+                             int tag,
+                             const void* addr2,
+                             int line) {
+  if (NODE_V8SYMBOL_ENABLED()) {
+    switch (operation) {
+    case 1:
+      NODE_V8SYMBOL_ADD(symbol, addr1, len, tag, (ULONGLONG)addr2, line);
+      break;
+    case 2:
+      NODE_V8SYMBOL_REMOVE(addr1, addr2);
+      break;
+    case 3:
+      NODE_V8SYMBOL_MOVE(addr1, addr2);
+      break;
+    case 4:
+      NODE_V8SYMBOL_RESET();
+      break;
+    case 5:
+      NODE_V8SYMBOL_SOURCEADD(symbol, addr1, (ULONGLONG)addr2, tag);
+      break;
+    default:
+      return false;
+    }
+  }
+  return true;
+}
+
 
 // This callback is called by ETW when consumers of our provider
 // are enabled or disabled.
@@ -47,7 +81,13 @@ void NTAPI etw_events_enable_callback(
   PVOID CallbackContext) {
   if (IsEnabled) {
     events_enabled++;
+    if (events_enabled == 1) {
+      V8::SetCodeAddressEventCallback(CodeAddressNotification, true);
+    }
   } else {
+    if (events_enabled == 1) {
+      V8::SetCodeAddressEventCallback(NULL, false);
+    }
     events_enabled--;
   }
 }
@@ -88,4 +128,5 @@ void shutdown_etw() {
     advapi = NULL;
   }
 }
+
 }

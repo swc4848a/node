@@ -46,6 +46,12 @@
 #define NODE_NET_SOCKET_WRITE_ENABLED() (0)
 #define NODE_GC_START(arg0, arg1)
 #define NODE_GC_DONE(arg0, arg1)
+#define NODE_V8SYMBOL_ADD(arg0, arg1, arg2, arg3, arg4, arg5)
+#define NODE_V8SYMBOL_SOURCEADD(arg0, arg1, arg2, arg3)
+#define NODE_V8SYMBOL_REMOVE(arg0, arg1)
+#define NODE_V8SYMBOL_MOVE(arg0, arg1)
+#define NODE_V8SYMBOL_RESET()
+#define NODE_V8SYMBOL_ENABLED()
 #endif
 
 namespace node {
