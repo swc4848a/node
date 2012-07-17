@@ -58,6 +58,7 @@
 #include "version.h"
 #include "vm-state-inl.h"
 
+
 #define LOG_API(isolate, expr) LOG(isolate, ApiEntryCall(expr))
 
 #define ENTER_V8(isolate)                                        \
@@ -5376,8 +5377,10 @@ bool V8::IsExecutionTerminating(Isolate* isolate) {
 }
 
 
-void V8::SetCodeAddressEventCallback(CodeAddressEvent callback, bool enumExisting) {
-  v8::internal::CodeAddressNotification::SetCodeAddressEventCallback(callback, enumExisting);
+void V8::SetCodeAddressEventCallback(CodeAddressEvent callback,
+                                     bool enumExisting) {
+  i::CodeAddressNotification::SetCodeAddressEventCallback(callback,
+                                                          enumExisting);
 }
 
 

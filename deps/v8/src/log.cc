@@ -941,7 +941,7 @@ void Logger::CodeCreateEvent(LogEventsAndTags tag,
                              Code* code,
                              SharedFunctionInfo* shared,
                              String* name) {
-  if (!log_->IsEnabled() && !v8::internal::CodeAddressNotification::IsEnabled()) return;
+  if (!log_->IsEnabled() && !CodeAddressNotification::IsEnabled()) return;
   if (FLAG_ll_prof || Serializer::enabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendBytes(kLogEventsNames[tag]);
@@ -955,15 +955,18 @@ void Logger::CodeCreateEvent(LogEventsAndTags tag,
   if (Serializer::enabled()) {
     RegisterSnapshotCodeName(code, name_buffer_->get(), name_buffer_->size());
   }
-  if (v8::internal::CodeAddressNotification::IsEnabled()) {
+  if (CodeAddressNotification::IsEnabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendString(name);
     name_buffer_->AppendByte('\0');
-    v8::internal::CodeAddressNotification::WriteSymbolMap(this, 1,
-                            code->instruction_start(),
-                            code->instruction_size(),
-                            name_buffer_->get(),
-                            (int)tag, (void*)shared->script(), 0);
+    CodeAddressNotification::WriteSymbolMap(this,
+                                            Add,
+                                            code->instruction_start(),
+                                            code->instruction_size(),
+                                            name_buffer_->get(),
+                                            tag,
+                                            shared->script(),
+                                            0);
   }
   if (!FLAG_log_code) return;
   if (code == Isolate::Current()->builtins()->builtin(
@@ -992,7 +995,7 @@ void Logger::CodeCreateEvent(LogEventsAndTags tag,
                              Code* code,
                              SharedFunctionInfo* shared,
                              String* source, int line) {
-  if (!log_->IsEnabled() && !v8::internal::CodeAddressNotification::IsEnabled()) return;
+  if (!log_->IsEnabled() && !CodeAddressNotification::IsEnabled()) return;
   if (FLAG_ll_prof || Serializer::enabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendBytes(kLogEventsNames[tag]);
@@ -1010,15 +1013,18 @@ void Logger::CodeCreateEvent(LogEventsAndTags tag,
   if (Serializer::enabled()) {
     RegisterSnapshotCodeName(code, name_buffer_->get(), name_buffer_->size());
   }
-  if (v8::internal::CodeAddressNotification::IsEnabled()) {
+  if (CodeAddressNotification::IsEnabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendString(shared->DebugName());
     name_buffer_->AppendByte('\0');
-    v8::internal::CodeAddressNotification::WriteSymbolMap(this, 1,
-                            code->instruction_start(),
-                            code->instruction_size(),
-                            name_buffer_->get(),
-                            (int)tag, (void*)shared->script(), line);
+    CodeAddressNotification::WriteSymbolMap(this,
+                                            Add,
+                                            code->instruction_start(),
+                                            code->instruction_size(),
+                                            name_buffer_->get(),
+                                            tag,
+                                            shared->script(),
+                                            line);
   }
   if (!FLAG_log_code) return;
   LogMessageBuilder msg(this);
@@ -1076,7 +1082,7 @@ void Logger::CodeMovingGCEvent() {
 
 
 void Logger::RegExpCodeCreateEvent(Code* code, String* source) {
-  if (!log_->IsEnabled() && !v8::internal::CodeAddressNotification::IsEnabled()) return;
+  if (!log_->IsEnabled() && !CodeAddressNotification::IsEnabled()) return;
   if (FLAG_ll_prof || Serializer::enabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendBytes(kLogEventsNames[REG_EXP_TAG]);
@@ -1089,17 +1095,20 @@ void Logger::RegExpCodeCreateEvent(Code* code, String* source) {
   if (Serializer::enabled()) {
     RegisterSnapshotCodeName(code, name_buffer_->get(), name_buffer_->size());
   }
-  if (v8::internal::CodeAddressNotification::IsEnabled()) {
+  if (CodeAddressNotification::IsEnabled()) {
     name_buffer_->Reset();
     name_buffer_->AppendBytes(kLogEventsNames[REG_EXP_TAG]);
     name_buffer_->AppendByte(':');
     name_buffer_->AppendString(source);
     name_buffer_->AppendByte('\0');
-    v8::internal::CodeAddressNotification::WriteSymbolMap(this, 1,
-                            code->instruction_start(),
-                            code->instruction_size(),
-                            name_buffer_->get(),
-                            (int)REG_EXP_TAG, NULL, 0);
+    CodeAddressNotification::WriteSymbolMap(this,
+                                            Add,
+                                            code->instruction_start(),
+                                            code->instruction_size(),
+                                            name_buffer_->get(),
+                                            REG_EXP_TAG,
+                                            NULL,
+                                            0);
   }
   if (!FLAG_log_code) return;
   LogMessageBuilder msg(this);
@@ -1116,28 +1125,40 @@ void Logger::RegExpCodeCreateEvent(Code* code, String* source) {
 
 
 void Logger::CodeMoveEvent(Address from, Address to) {
-  if (!log_->IsEnabled() && !v8::internal::CodeAddressNotification::IsEnabled()) return;
+  if (!log_->IsEnabled() && !CodeAddressNotification::IsEnabled()) return;
   if (FLAG_ll_prof) LowLevelCodeMoveEvent(from, to);
   if (Serializer::enabled() && address_to_name_map_ != NULL) {
     address_to_name_map_->Move(from, to);
   }
-  if (v8::internal::CodeAddressNotification::IsEnabled()) {
-    v8::internal::CodeAddressNotification::WriteSymbolMap(this, 2,
-                            from, 0, NULL, 0, to, 0);
+  if (CodeAddressNotification::IsEnabled()) {
+    CodeAddressNotification::WriteSymbolMap(this,
+                                            Move,
+                                            from,
+                                            0,
+                                            NULL,
+                                            CODE_MOVE_EVENT,
+                                            to,
+                                            0);
   }
   MoveEventInternal(CODE_MOVE_EVENT, from, to);
 }
 
 
 void Logger::CodeDeleteEvent(Address from) {
-  if (!log_->IsEnabled() && !v8::internal::CodeAddressNotification::IsEnabled()) return;
+  if (!log_->IsEnabled() && !CodeAddressNotification::IsEnabled()) return;
   if (FLAG_ll_prof) LowLevelCodeDeleteEvent(from);
   if (Serializer::enabled() && address_to_name_map_ != NULL) {
     address_to_name_map_->Remove(from);
   }
-  if (v8::internal::CodeAddressNotification::IsEnabled()) {
-    v8::internal::CodeAddressNotification::WriteSymbolMap(this, 3,
-                            from, 0, NULL, 0, NULL, 0);
+  if (CodeAddressNotification::IsEnabled()) {
+    CodeAddressNotification::WriteSymbolMap(this,
+                                            Remove,
+                                            from,
+                                            0,
+                                            NULL,
+                                            CODE_DELETE_EVENT,
+                                            NULL,
+                                            0);
   }
   DeleteEventInternal(CODE_DELETE_EVENT, from);
 }
@@ -1363,6 +1384,12 @@ void Logger::LogFailure() {
 
 bool Logger::IsProfilerSamplerActive() {
   return ticker_->IsActive();
+}
+
+
+// This returns true if API callback for symbol address is enabled.
+bool Logger::CodeAddressCallbackEnabled() {
+  return CodeAddressNotification::IsEnabled();
 }
 
 
@@ -1831,20 +1858,21 @@ void SamplerRegistry::RemoveActiveSampler(Sampler* sampler) {
 }
 
 
-// external code address mapping notifications
+// External code address mapping notifications.
 
-// counter to indicate that enumeration of compiled functions is required.
-// incremented each time notification enabled and enumeration requested
-// Callback setting is not isolated, so we set global, and check from each logger
-volatile v8::internal::Atomic32 NeedReset = 0;
-v8::internal::Atomic32 EnumIncr = 1;
+// Counter to indicate that enumeration of compiled functions is required.
+// Incremented each time notification enabled and enumeration requested.
+// Callback setting is not isolated. Set global and check from each logger.
+volatile Atomic32 NeedReset = 0;
+Atomic32 EnumIncr = 1;
 // the current callback (only one)
-volatile v8::internal::AtomicWord ExtCallback = NULL;
+volatile AtomicWord ExtCallback = NULL;
 
 // called by host to set callbacks - null turns off callbacks
-void CodeAddressNotification::SetCodeAddressEventCallback(CodeAddressEvent cb, bool enumExisting) {
-  v8::internal::AtomicWord newcb = (v8::internal::AtomicWord)cb;
-  v8::internal::AtomicWord old = v8::internal::NoBarrier_AtomicExchange(&ExtCallback, newcb);
+void CodeAddressNotification::SetCodeAddressEventCallback(CodeAddressEvent cb,
+                                                          bool enumExisting) {
+  AtomicWord newcb = (AtomicWord)cb;
+  AtomicWord old = NoBarrier_AtomicExchange(&ExtCallback, newcb);
 
   if (cb != NULL && enumExisting) {
     NoBarrier_AtomicIncrement(&NeedReset, EnumIncr);
@@ -1854,28 +1882,28 @@ void CodeAddressNotification::SetCodeAddressEventCallback(CodeAddressEvent cb, b
 
 // called by v8 when a symbol map is created or changed
 void CodeAddressNotification::WriteSymbolMap(Logger* logger,
-                                                int op,
-                                                const void* addr1,
-                                                int len,
-                                                const char* symbol,
-                                                int tag,
-                                                const void* addr2,
-                                                int line) {
+                                             CodeAddressOperation op,
+                                             const void* addr1,
+                                             int len,
+                                             const char* symbol,
+                                             Logger::LogEventsAndTags tag,
+                                             const void* addr2,
+                                             int line) {
   if (ExtCallback != NULL) {
     CodeAddressEvent cb = (CodeAddressEvent)ExtCallback;
     if (cb != NULL) {
       if (logger->notified_reset_ < NeedReset) {
           // enumeration needed. log a reset, then log existing functions
           logger->notified_reset_ = NeedReset;
-          cb(4, NULL, 0, "", 0, NULL, 0);
+          cb(CodeAddressOperation::Reset, NULL, 0, "", Logger::CODE_CREATION_EVENT, NULL, 0);
           logger->LogCompiledFunctions();
       }
 
-      if (op == 1) {
+      if (op == Add) {
         switch (tag) {
           case Logger::SCRIPT_TAG:
           case Logger::NATIVE_SCRIPT_TAG:
-            op = 5;
+            op = Source;
             break;
           case Logger::FUNCTION_TAG:
           case Logger::LAZY_COMPILE_TAG:
@@ -1887,7 +1915,7 @@ void CodeAddressNotification::WriteSymbolMap(Logger* logger,
             return;
         }
       }
-      cb(op, addr1, len, symbol, tag, addr2, line);
+      cb(op, addr1, len, symbol, static_cast<int>(tag), addr2, line);
     }
   }
 }

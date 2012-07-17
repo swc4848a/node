@@ -78,27 +78,6 @@ class SlidingStateWindow;
 class Ticker;
 
 
-class CodeAddressNotification {
-public:
-    // called by host to set callbacks - null turns off callbacks
-    static void SetCodeAddressEventCallback(CodeAddressEvent cb,
-                                            bool enumExisting);
-
-    // called by v8 when a symbol map is created or changed
-    static void WriteSymbolMap(Logger* logger,
-                               int op,
-                               const void* addr1,
-                               int len,
-                               const char* symbol,
-                               int tag,
-                               const void* addr2,
-                               int line);
-
-    // called by v8 to determine if callbacks are enabled
-    static bool IsEnabled();
-
-};
-
 #undef LOG
 #define LOG(isolate, Call)                          \
   do {                                              \
@@ -293,7 +272,7 @@ class Logger {
   void LogRuntime(Vector<const char> format, JSArray* args);
 
   bool is_logging() {
-    return logging_nesting_ > 0 || v8::internal::CodeAddressNotification::IsEnabled();
+    return logging_nesting_ > 0 || CodeAddressCallbackEnabled();
   }
 
   // Pause/Resume collection of profiling data.
@@ -393,6 +372,9 @@ class Logger {
   // Returns whether profiler's sampler is active.
   bool IsProfilerSamplerActive();
 
+  // Returns whether symbol callback is enabled.
+  bool CodeAddressCallbackEnabled();
+
   // The sampler used by the profiler and the sliding state window.
   Ticker* ticker_;
 
@@ -451,6 +433,28 @@ class Logger {
   friend class CodeAddressNotification;
 
   int notified_reset_;
+};
+
+
+class CodeAddressNotification {
+public:
+    // called by host to set callbacks - null turns off callbacks
+    static void SetCodeAddressEventCallback(CodeAddressEvent cb,
+                                            bool enumExisting);
+
+    // called by v8 when a symbol map is created or changed
+    static void WriteSymbolMap(Logger* logger,
+                               CodeAddressOperation op,
+                               const void* addr1,
+                               int len,
+                               const char* symbol,
+                               Logger::LogEventsAndTags tag,
+                               const void* addr2,
+                               int line);
+
+    // called by v8 to determine if callbacks are enabled
+    static bool IsEnabled();
+
 };
 
 

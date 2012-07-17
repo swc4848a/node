@@ -36,7 +36,7 @@ EventWriteFunc event_write;
 int events_enabled;
 
 // callback from V8 module passes symbol and address info for stack walk resolution
-bool CodeAddressNotification(int operation,
+bool CodeAddressNotification(CodeAddressOperation operation,
                              const void* addr1,
                              int len,
                              const char* symbol,
@@ -45,19 +45,19 @@ bool CodeAddressNotification(int operation,
                              int line) {
   if (NODE_V8SYMBOL_ENABLED()) {
     switch (operation) {
-    case 1:
+    case Add:
       NODE_V8SYMBOL_ADD(symbol, addr1, len, tag, (ULONGLONG)addr2, line);
       break;
-    case 2:
+    case Remove:
       NODE_V8SYMBOL_REMOVE(addr1, addr2);
       break;
-    case 3:
+    case Move:
       NODE_V8SYMBOL_MOVE(addr1, addr2);
       break;
-    case 4:
+    case Reset:
       NODE_V8SYMBOL_RESET();
       break;
-    case 5:
+    case Source:
       NODE_V8SYMBOL_SOURCEADD(symbol, addr1, (ULONGLONG)addr2, tag);
       break;
     default:

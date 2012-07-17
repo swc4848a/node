@@ -2929,10 +2929,18 @@ class V8EXPORT ExternalResourceVisitor {  // NOLINT
 
 
 /**
- * CodeAddressEvent is used as a callback function for external logging of symbols to address
- * Operation may be add, move, remove, or enumerated.
+ * CodeAddressEvent is used as a callback function for external logging
+ * of symbols to address.
  */
-typedef bool (*CodeAddressEvent)(int operation,
+enum CodeAddressOperation {
+  Add = 1,
+  Move,
+  Remove,
+  Reset,
+  Source
+};
+
+typedef bool (*CodeAddressEvent)(CodeAddressOperation operation,
                                  const void* addr1,
                                  int len,
                                  const char* symbol,
@@ -3341,9 +3349,10 @@ class V8EXPORT V8 {
 
   /**
    * This function sets or removes callback to get code address locations.
-   * The enumExisting flag if true requests to enumerate exsting code addresses.
+   * Set enumExisting flag to true to enumerate existing code addresses.
    */
-  static void SetCodeAddressEventCallback(CodeAddressEvent callback, bool enumExisting);
+  static void SetCodeAddressEventCallback(CodeAddressEvent callback,
+      bool enumExisting);
 
  private:
   V8();
