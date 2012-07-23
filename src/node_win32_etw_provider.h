@@ -68,9 +68,16 @@ INLINE void NODE_GC_START(GCType type, GCCallbackFlags flags);
 INLINE void NODE_GC_DONE(GCType type, GCCallbackFlags flags);
 INLINE void NODE_V8SYMBOL_REMOVE(const void* addr1, const void* addr2);
 INLINE void NODE_V8SYMBOL_MOVE(const void* addr1, const void* addr2);
-INLINE void NODE_V8SYMBOL_ADD(LPCSTR symbol, const void* addr1, int len, unsigned short tag,
-                        INT64 sourceid, int line);
-INLINE void NODE_V8SYMBOL_SOURCEADD(LPCSTR symbol, const void* addr1, INT64 sourceid, int tag);
+INLINE void NODE_V8SYMBOL_ADD(LPCSTR symbol,
+                                const void* addr1,
+                                int len,
+                                unsigned short tag,
+                                INT64 sourceid,
+                                int line);
+INLINE void NODE_V8SYMBOL_SOURCEADD(LPCSTR symbol,
+                                    const void* addr1,
+                                    INT64 sourceid,
+                                    int tag);
 INLINE void NODE_V8SYMBOL_RESET();
 
 INLINE bool NODE_HTTP_SERVER_REQUEST_ENABLED();

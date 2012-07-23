@@ -35,7 +35,7 @@ EventUnregisterFunc event_unregister;
 EventWriteFunc event_write;
 int events_enabled;
 
-// callback from V8 module passes symbol and address info for stack walk resolution
+// callback from V8 module passes symbol and address info for stack walk
 bool CodeAddressNotification(CodeAddressOperation operation,
                              const void* addr1,
                              int len,

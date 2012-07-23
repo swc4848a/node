@@ -1865,10 +1865,12 @@ void SamplerRegistry::RemoveActiveSampler(Sampler* sampler) {
 // Callback setting is not isolated. Set global and check from each logger.
 volatile Atomic32 NeedReset = 0;
 Atomic32 EnumIncr = 1;
-// the current callback (only one)
+// The current callback (only one)
 volatile AtomicWord ExtCallback = NULL;
 
-// called by host to set callbacks - null turns off callbacks
+// Called by host to set callbacks - null turns off callbacks.
+// Callback may still be called after it is turned off. The caller must
+// close the isolate before unloading the callback code.
 void CodeAddressNotification::SetCodeAddressEventCallback(CodeAddressEvent cb,
                                                           bool enumExisting) {
   AtomicWord newcb = (AtomicWord)cb;
@@ -1880,7 +1882,7 @@ void CodeAddressNotification::SetCodeAddressEventCallback(CodeAddressEvent cb,
 }
 
 
-// called by v8 when a symbol map is created or changed
+// Called by v8 when a symbol map is created or changed.
 void CodeAddressNotification::WriteSymbolMap(Logger* logger,
                                              CodeAddressOperation op,
                                              const void* addr1,
@@ -1889,39 +1891,43 @@ void CodeAddressNotification::WriteSymbolMap(Logger* logger,
                                              Logger::LogEventsAndTags tag,
                                              const void* addr2,
                                              int line) {
-  if (ExtCallback != NULL) {
-    CodeAddressEvent cb = (CodeAddressEvent)ExtCallback;
-    if (cb != NULL) {
-      if (logger->notified_reset_ < NeedReset) {
-          // enumeration needed. log a reset, then log existing functions
-          logger->notified_reset_ = NeedReset;
-          cb(CodeAddressOperation::Reset, NULL, 0, "", Logger::CODE_CREATION_EVENT, NULL, 0);
-          logger->LogCompiledFunctions();
-      }
-
-      if (op == Add) {
-        switch (tag) {
-          case Logger::SCRIPT_TAG:
-          case Logger::NATIVE_SCRIPT_TAG:
-            op = Source;
-            break;
-          case Logger::FUNCTION_TAG:
-          case Logger::LAZY_COMPILE_TAG:
-          case Logger::NATIVE_FUNCTION_TAG:
-          case Logger::NATIVE_LAZY_COMPILE_TAG:
-          case Logger::REG_EXP_TAG:
-            break;
-          default:
-            return;
-        }
-      }
-      cb(op, addr1, len, symbol, static_cast<int>(tag), addr2, line);
+  CodeAddressEvent cb = (CodeAddressEvent)ExtCallback;
+  if (cb != NULL) {
+    if (logger->notified_reset_ < NeedReset) {
+        // Enumeration needed. Log a reset, then log existing functions.
+        logger->notified_reset_ = NeedReset;
+        cb(CodeAddressOperation::Reset,
+            NULL,
+            0,
+            "",
+            Logger::CODE_CREATION_EVENT,
+            NULL,
+            0);
+        logger->LogCompiledFunctions();
     }
+
+    if (op == Add) {
+      switch (tag) {
+        case Logger::SCRIPT_TAG:
+        case Logger::NATIVE_SCRIPT_TAG:
+          op = Source;
+          break;
+        case Logger::FUNCTION_TAG:
+        case Logger::LAZY_COMPILE_TAG:
+        case Logger::NATIVE_FUNCTION_TAG:
+        case Logger::NATIVE_LAZY_COMPILE_TAG:
+        case Logger::REG_EXP_TAG:
+          break;
+        default:
+          return;
+      }
+    }
+    cb(op, addr1, len, symbol, static_cast<int>(tag), addr2, line);
   }
 }
 
 
-// called by v8 to determine if callbacks are enabled
+// Called by v8 to determine if callbacks are enabled.
 bool CodeAddressNotification::IsEnabled() {
   return ExtCallback != NULL;
 }

@@ -51,8 +51,10 @@ extern int events_enabled;
 #define ETW_WRITE_INT16_DATA(data_descriptor, data)  \
   EventDataDescCreate(data_descriptor, data, sizeof(int16_t));
 
-#define ETW_WRITE_WSTRING_DATA(data_descriptor, data)                          \
-  EventDataDescCreate(data_descriptor, data, (wcslen(data) + 1) * sizeof(wchar_t));
+#define ETW_WRITE_WSTRING_DATA(data_descriptor, data)                         \
+  EventDataDescCreate(data_descriptor,                                        \
+                      data,                                                   \
+                      (wcslen(data) + 1) * sizeof(wchar_t));
 
 #define ETW_WRITE_NET_CONNECTION(descriptors, conn)                           \
   ETW_WRITE_INT32_DATA(descriptors, &conn->fd);                               \
@@ -77,7 +79,17 @@ extern int events_enabled;
     ETW_WRITE_ADDRESS_DATA(descriptors, &addr1);                              \
     ETW_WRITE_ADDRESS_DATA(descriptors + 1, &addr2);
 
-#define ETW_WRITE_JSMETHOD_LOADUNLOAD(descriptors, context, startAddr, size, id, flags, rangeId, sourceId, line, col, name)   \
+#define ETW_WRITE_JSMETHOD_LOADUNLOAD(descriptors,                            \
+                                      context,                                \
+                                      startAddr,                              \
+                                      size,                                   \
+                                      id,                                     \
+                                      flags,                                  \
+                                      rangeId,                                \
+                                      sourceId,                               \
+                                      line,                                   \
+                                      col,                                    \
+                                      name)                                   \
     ETW_WRITE_ADDRESS_DATA(descriptors, &context);                            \
     ETW_WRITE_ADDRESS_DATA(descriptors + 1, &startAddr);                      \
     ETW_WRITE_INT64_DATA(descriptors + 2, &size);                             \
@@ -89,7 +101,11 @@ extern int events_enabled;
     ETW_WRITE_INT32_DATA(descriptors + 8, &col);                              \
     ETW_WRITE_WSTRING_DATA(descriptors + 9, name);
 
-#define ETW_WRITE_JSSOURCE_LOADUNLOAD(descriptors, sourceId, context, flags, url)   \
+#define ETW_WRITE_JSSOURCE_LOADUNLOAD(descriptors,                            \
+                                      sourceId,                               \
+                                      context,                                \
+                                      flags,                                  \
+                                      url)                                    \
     ETW_WRITE_INT64_DATA(descriptors, &sourceId);                             \
     ETW_WRITE_ADDRESS_DATA(descriptors+ 1, &context);                         \
     ETW_WRITE_INT32_DATA(descriptors + 2, &flags);                            \
@@ -196,8 +212,12 @@ void NODE_V8SYMBOL_RESET() {
 }
 
 
-void NODE_V8SYMBOL_ADD(LPCSTR symbol, const void* addr1, int len, unsigned short tag,
-                        INT64 sourceid, int line) {
+void NODE_V8SYMBOL_ADD(LPCSTR symbol,
+                        const void* addr1,
+                        int len,
+                        unsigned short tag,
+                        INT64 sourceid,
+                        int line) {
   if (events_enabled > 0) {
     wchar_t symbuf[128];
     if (symbol == NULL) {
@@ -212,13 +232,26 @@ void NODE_V8SYMBOL_ADD(LPCSTR symbol, const void* addr1, int len, unsigned short
     INT16 rangeid = 1;
     INT32 col = 1;
     EVENT_DATA_DESCRIPTOR descriptors[10];
-    ETW_WRITE_JSMETHOD_LOADUNLOAD(descriptors, context, addr1, size, id, flags, rangeid, sourceid, line, col, symbuf);
+    ETW_WRITE_JSMETHOD_LOADUNLOAD(descriptors,
+                                  context,
+                                  addr1,
+                                  size,
+                                  id,
+                                  flags,
+                                  rangeid,
+                                  sourceid,
+                                  line,
+                                  col,
+                                  symbuf);
     ETW_WRITE_EVENT(MethodLoad, descriptors);
   }
 }
 
 
-void NODE_V8SYMBOL_SOURCEADD(LPCSTR symbol, const void* addr1, INT64 sourceid, int tag) {
+void NODE_V8SYMBOL_SOURCEADD(LPCSTR symbol,
+                             const void* addr1,
+                             INT64 srcid,
+                             int tag) {
   if (events_enabled > 0) {
     wchar_t symbuf[128];
     if (symbol == NULL) {
@@ -229,7 +262,7 @@ void NODE_V8SYMBOL_SOURCEADD(LPCSTR symbol, const void* addr1, INT64 sourceid, i
     void* context = NULL;
     INT32 flags = 0;
     EVENT_DATA_DESCRIPTOR descriptors[4];
-    ETW_WRITE_JSSOURCE_LOADUNLOAD(descriptors, sourceid, context, flags, symbuf);
+    ETW_WRITE_JSSOURCE_LOADUNLOAD(descriptors, srcid, context, flags, symbuf);
     ETW_WRITE_EVENT(SourceLoad, descriptors);
   }
 }
