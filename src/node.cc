@@ -2537,7 +2537,7 @@ void Load(Handle<Object> process_l) {
   f->Call(global, 1, args);
 
   if (try_catch.HasCaught())  {
-    ReportException(try_catch, true);
+    FatalException(try_catch);
     exit(11);
   }
 }
