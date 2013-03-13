@@ -24,6 +24,11 @@ var assert = require('assert');
 var exec = require('child_process').exec;
 var path = require('path');
 
+if (process.versions.node.indexOf('0.10') === 0) {
+  console.log('Skipping test, fs debug stack traces are disabled in v0.10.');
+  return;
+}
+
 var callbacks = 0;
 
 function test(env, cb) {
