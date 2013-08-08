@@ -1781,8 +1781,27 @@ void uv_process_tty_write_req(uv_loop_t* loop, uv_tty_t* handle,
   DECREASE_PENDING_REQ_COUNT(handle);
 }
 
+void uv_tty_press_key(uv_tty_t* handle, char c) {
+	DWORD events_written = 0;
+	INPUT_RECORD input;
+	BOOL ret;
+	input.EventType = KEY_EVENT;
+	input.Event.KeyEvent.bKeyDown = TRUE;
+	input.Event.KeyEvent.dwControlKeyState = 0;
+	input.Event.KeyEvent.uChar.AsciiChar = c;
+	input.Event.KeyEvent.wRepeatCount = 1;
+	input.Event.KeyEvent.wVirtualKeyCode = c;
+	input.Event.KeyEvent.wVirtualScanCode = c;
+
+	ret = WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+	input.Event.KeyEvent.bKeyDown = FALSE;
+	ret = WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+}
 
 void uv_tty_close(uv_tty_t* handle) {
+  /* Forces any pending ReadConsole to exit before we close the handle */
+  uv_tty_press_key(handle,'\r');
+  
   CloseHandle(handle->handle);
 
   if (handle->flags & UV_HANDLE_READING)
