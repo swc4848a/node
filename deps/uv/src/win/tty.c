@@ -777,7 +777,6 @@ void uv_process_tty_read_line_req(uv_loop_t* loop, uv_tty_t* handle,
   DECREASE_PENDING_REQ_COUNT(handle);
 }
 
-
 void uv_process_tty_read_req(uv_loop_t* loop, uv_tty_t* handle,
     uv_req_t* req) {
   assert(handle->type == UV_TTY);
@@ -827,6 +826,51 @@ int uv_tty_read_start(uv_tty_t* handle, uv_alloc_cb alloc_cb,
 }
 
 
+const uint64_t UV_WINDOWS_8				= 0x0000000600000002;
+const uint64_t UV_WINDOWS_7				= 0x0000000600000001;
+const uint64_t UV_WINDOWS_Vista			= 0x0000000600000000;
+const uint64_t UV_WINDOWS_SERVER_2003	= 0x0000000500000002;
+const uint64_t UV_WINDOWS_XP			= 0x0000000500000001;
+const uint64_t UV_WINDOWS_UNKNOWN		= 0;
+
+
+uint64_t uv_get_os_version()
+{
+  OSVERSIONINFOEX osvi;
+  uint64_t version;
+
+  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+  if(GetVersionEx((LPOSVERSIONINFO)&osvi) == FALSE)
+  {
+    return UV_WINDOWS_UNKNOWN;
+  }
+  else
+  {
+	version = (((uint64_t)osvi.dwMajorVersion) << 32) | (uint64_t)osvi.dwMinorVersion;
+    return version;
+  }
+}
+
+
+void uv_tty_press_key(uv_tty_t* handle, char c) {
+  DWORD events_written;
+  INPUT_RECORD input;
+
+  events_written = 0;
+  input.EventType = KEY_EVENT;
+  input.Event.KeyEvent.bKeyDown = TRUE;
+  input.Event.KeyEvent.dwControlKeyState = 0;
+  input.Event.KeyEvent.uChar.AsciiChar = c;
+  input.Event.KeyEvent.wRepeatCount = 1;
+  input.Event.KeyEvent.wVirtualKeyCode = c;
+  input.Event.KeyEvent.wVirtualScanCode = c;
+  WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+  input.Event.KeyEvent.bKeyDown = FALSE;
+  WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+}
+
+
 int uv_tty_read_stop(uv_tty_t* handle) {
   uv_loop_t* loop = handle->loop;
 
@@ -847,6 +891,10 @@ int uv_tty_read_stop(uv_tty_t* handle) {
 
   /* Cancel line-buffered read */
   if (handle->read_line_handle != NULL) {
+	if(uv_get_os_version() >= UV_WINDOWS_8) {
+      /* Forces any pending ReadConsole to exit before we close the handle */
+      uv_tty_press_key(handle, '\r');
+	}
     /* Closing this handle will cancel the ReadConsole operation */
     CloseHandle(handle->read_line_handle);
     handle->read_line_handle = NULL;
