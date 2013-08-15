@@ -826,48 +826,51 @@ int uv_tty_read_start(uv_tty_t* handle, uv_alloc_cb alloc_cb,
 }
 
 
-const uint64_t UV_WINDOWS_8				= 0x0000000600000002;
-const uint64_t UV_WINDOWS_7				= 0x0000000600000001;
-const uint64_t UV_WINDOWS_Vista			= 0x0000000600000000;
-const uint64_t UV_WINDOWS_SERVER_2003	= 0x0000000500000002;
-const uint64_t UV_WINDOWS_XP			= 0x0000000500000001;
-const uint64_t UV_WINDOWS_UNKNOWN		= 0;
+#if !defined(_INC_SDKDDKVER)
+#define _WIN32_WINNT_NT4                    0x0400
+#define _WIN32_WINNT_WIN2K                  0x0500
+#define _WIN32_WINNT_WINXP                  0x0501
+#define _WIN32_WINNT_WS03                   0x0502
+#define _WIN32_WINNT_WIN6                   0x0600
+#define _WIN32_WINNT_VISTA                  0x0600
+#define _WIN32_WINNT_WS08                   0x0600
+#define _WIN32_WINNT_LONGHORN               0x0600
+#define _WIN32_WINNT_WIN7                   0x0601
+#define _WIN32_WINNT_WIN8                   0x0602
+#endif
 
 
-uint64_t uv_get_os_version()
+static uint16_t uv_get_os_version()
 {
   OSVERSIONINFOEX osvi;
-  uint64_t version;
 
-  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+  memset(&osvi, 0, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  if(GetVersionEx((LPOSVERSIONINFO)&osvi) == FALSE)
-  {
-    return UV_WINDOWS_UNKNOWN;
-  }
-  else
-  {
-	version = (((uint64_t)osvi.dwMajorVersion) << 32) | (uint64_t)osvi.dwMinorVersion;
-    return version;
+  if (GetVersionEx((OSVERSIONINFO*) &osvi) == FALSE) {
+    uv_fatal_error(GetLastError(), "GetVersionEx");
+  } else {
+    return ((osvi.dwMajorVersion & 0xF) << 8) | (osvi.dwMinorVersion & 0xF);
   }
 }
 
 
-void uv_tty_press_key(uv_tty_t* handle, char c) {
+static void uv_tty_simulate_enter_key_press(uv_tty_t* handle) {
   DWORD events_written;
   INPUT_RECORD input;
+
+  assert(handle->handle && handle->handle != INVALID_HANDLE_VALUE);
 
   events_written = 0;
   input.EventType = KEY_EVENT;
   input.Event.KeyEvent.bKeyDown = TRUE;
   input.Event.KeyEvent.dwControlKeyState = 0;
-  input.Event.KeyEvent.uChar.AsciiChar = c;
+  input.Event.KeyEvent.uChar.UnicodeChar = L'\r';
   input.Event.KeyEvent.wRepeatCount = 1;
-  input.Event.KeyEvent.wVirtualKeyCode = c;
-  input.Event.KeyEvent.wVirtualScanCode = c;
-  WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+  input.Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+  input.Event.KeyEvent.wVirtualScanCode = MapVirtualKey(VK_RETURN, MAPVK_VK_TO_VSC);
+  WriteConsoleInputW(handle->handle, &input, 1, &events_written);
   input.Event.KeyEvent.bKeyDown = FALSE;
-  WriteConsoleInputA(handle->handle, &input, 1, &events_written);
+  WriteConsoleInputW(handle->handle, &input, 1, &events_written);
 }
 
 
@@ -891,15 +894,14 @@ int uv_tty_read_stop(uv_tty_t* handle) {
 
   /* Cancel line-buffered read */
   if (handle->read_line_handle != NULL) {
-	if(uv_get_os_version() >= UV_WINDOWS_8) {
+    if(uv_get_os_version() >= _WIN32_WINNT_WIN8) {
       /* Forces any pending ReadConsole to exit before we close the handle */
-      uv_tty_press_key(handle, '\r');
-	}
+      uv_tty_simulate_enter_key_press(handle);
+    }
     /* Closing this handle will cancel the ReadConsole operation */
     CloseHandle(handle->read_line_handle);
     handle->read_line_handle = NULL;
   }
-
 
   return 0;
 }
