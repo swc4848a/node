@@ -32,6 +32,7 @@ process.on('exit', function() {
 
 // this should fail with an async EINVAL error, not throw an exception
 net.createServer(assert.fail).listen({fd:0}).on('error', function(e) {
+  console.error('got something', e);
   switch(e.code) {
     case 'EINVAL':
     case 'ENOTSOCK':
@@ -39,3 +40,6 @@ net.createServer(assert.fail).listen({fd:0}).on('error', function(e) {
       break
   }
 });
+
+
+setTimeout(function() {}, 5000);
