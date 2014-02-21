@@ -26,6 +26,7 @@ var net = require('net');
 var gotError = false;
 
 process.on('exit', function() {
+  console.error(gotError);
   assert(gotError instanceof Error);
 });
 
