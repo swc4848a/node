@@ -22,7 +22,14 @@
 var common = require('../common');
 var assert = require('assert');
 var net = require('net');
+var spawn = require('child_process').spawn;
 
+console.log(process.argv);
+
+if(process.argv.length > 2 && process.argv[2] == 'child')
+{
+	console.log('child');
+	
 var gotError = false;
 
 console.log('hello');
@@ -45,3 +52,11 @@ net.createServer(assert.fail).listen({fd:0}).on('error', function(e) {
 
 setTimeout(function() {}, 5000);
 
+}
+else
+{
+    var child =  spawn(process.execPath, [process.argv[1], 'child'], {stdio: ['pipe', 'inherit', 'inherit']});
+	child.on('exit', function(code) {
+		process.exit(code);
+		});
+}
