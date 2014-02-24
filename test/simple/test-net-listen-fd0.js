@@ -55,7 +55,7 @@ setTimeout(function() {}, 5000);
 }
 else
 {
-    var child =  spawn(process.execPath, [process.argv[1], 'child'], {stdio: ['pipe', 'inherit', 'inherit']});
+    var child =  spawn(process.execPath, [process.argv[1], 'child'], {stdio: ['pipe', process.stdout, process.stderr]});
 	child.on('exit', function(code) {
 		process.exit(code);
 		});
