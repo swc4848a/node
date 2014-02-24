@@ -25,14 +25,15 @@ var net = require('net');
 
 var gotError = false;
 
+console.log('hello');
 process.on('exit', function() {
-  console.error(gotError);
+  console.log(gotError);
   assert(gotError instanceof Error);
 });
 
 // this should fail with an async EINVAL error, not throw an exception
 net.createServer(assert.fail).listen({fd:0}).on('error', function(e) {
-  console.error('got somethingggg', e);
+  console.log('got somethingggg', e);
   switch(e.code) {
     case 'EINVAL':
     case 'ENOTSOCK':
