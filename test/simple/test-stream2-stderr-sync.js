@@ -32,7 +32,7 @@ function parent() {
   var assert = require('assert');
   var i = 0;
   children.forEach(function(_, c) {
-    var child = spawn(process.execPath, [__filename, '' + c]);
+    var child = spawn(process.execPath, [__filename, '' + c], {stdio:[null,'inherit','pipe']});
     var err = '';
 
     child.stderr.on('data', function(c) {
@@ -49,43 +49,10 @@ function parent() {
 }
 
 function child0() {
-  // Just a very simple wrapper around TTY(2)
-  // Essentially the same as stderr, but without all the net stuff.
-  var Writable = require('stream').Writable;
-  var util = require('util');
-
-  // a lowlevel stderr writer
-  var TTY = process.binding('tty_wrap').TTY;
-  var handle = new TTY(2, false);
-
-  util.inherits(W, Writable);
-
-  function W(opts) {
-    Writable.call(this, opts);
-  }
-
-  W.prototype._write = function(chunk, encoding, cb) {
-    var req = { oncomplete: afterWrite };
-    var err = handle.writeUtf8String(req, chunk.toString() + '\n');
-    if (err) throw errnoException(err, 'write');
-    // here's the problem.
-    // it needs to tell the Writable machinery that it's ok to write
-    // more, but that the current buffer length is handle.writeQueueSize
-    if (req.writeQueueSize === 0)
-      req.cb = cb;
-    else
-      cb();
-  }
-  function afterWrite(status, handle, req) {
-    if (req.cb)
-      req.cb();
-  }
-
-  var w = new W
-  w.write('child 0');
-  w.write('foo');
-  w.write('bar');
-  w.write('baz');
+  console.error('child 0');
+  console.error('foo');
+  console.error('bar');
+  console.error('baz');
 }
 
 // using console.error
@@ -107,7 +74,10 @@ function child2() {
 // using a net socket
 function child3() {
   var net = require('net');
-  var socket = new net.Socket({ fd: 2 });
+  var socket = new net.Socket({
+	fd: 2,
+	readable: false,
+	writable: true});
   socket.write('child 3\n');
   socket.write('foo\n');
   socket.write('bar\n');

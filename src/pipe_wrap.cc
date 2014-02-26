@@ -267,6 +267,10 @@ void PipeWrap::Open(const FunctionCallbackInfo<Value>& args) {
 
   if (err != 0)
     ThrowException(UVException(err, "uv_pipe_open"));
+
+  if (args.Length() > 1 && args[1]->IsTrue()) {
+    uv_stream_set_blocking((uv_stream_t*)&wrap->handle_, 1);
+  }
 }
 
 
