@@ -64,12 +64,33 @@ function Benchmark(fn, options) {
 Benchmark.prototype.http = function(p, args, cb) {
   var self = this;
   var wrk = path.resolve(__dirname, '..', 'tools', 'wrk', 'wrk');
-  var regexp = /Requests\/sec:[ \t]+([0-9\.]+)/;
+  var regexp = /Requests per second:[ \t]+([0-9\.]+)/;
   var spawn = require('child_process').spawn;
   var url = 'http://127.0.0.1:' + exports.PORT + p;
 
   args = args.concat(url);
-
+  
+  {
+    wrk = 'ab.exe';
+    var newArgs = [];
+    for(var i = 0; i < args.length; i++)
+    {
+       var arg = args[i];
+       if(arg == '-d') {
+          newArgs = newArgs.concat('-n');
+          newArgs = newArgs.concat('20000');
+          i++;
+       } else if (arg == '-t') {
+          i++;
+       } else {
+        newArgs = newArgs.concat(arg);
+      }
+        
+    }
+    
+    args = newArgs;
+  }
+  
   var out = '';
   var child = spawn(wrk, args);
 

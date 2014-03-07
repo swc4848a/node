@@ -63,9 +63,9 @@ long double stats_stdev(stats *stats, long double mean) {
     long double sum = 0.0;
     if (stats->limit < 2) return 0.0;
     for (uint64_t i = 0; i < stats->limit; i++) {
-        sum += powl(stats->data[i] - mean, 2);
+        sum += pow(stats->data[i] - mean, 2);
     }
-    return sqrtl(sum / (stats->limit - 1));
+    return sqrt(sum / (stats->limit - 1));
 }
 
 long double stats_within_stdev(stats *stats, long double mean, long double stdev, uint64_t n) {
