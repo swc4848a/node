@@ -28,7 +28,14 @@
 #include "handle-inl.h"
 
 
-void uv_update_time(uv_loop_t* loop) {
+static uint64_t (*uv_calc_time_fn)(uv_loop_t* loop);
+
+
+uint64_t uv__calc_time_qpc(uv_loop_t* loop) {
+  return uv__hrtime() / 1000000;
+}
+
+uint64_t uv__calc_time_gtc(uv_loop_t* loop) {
   DWORD ticks;
   ULARGE_INTEGER time;
 
@@ -47,15 +54,37 @@ void uv_update_time(uv_loop_t* loop) {
   /* Remember the last tick count. */
   loop->last_tick_count = ticks;
 
-  /* The GetTickCount() resolution isn't too good. Sometimes it'll happen */
-  /* that GetQueuedCompletionStatus() or GetQueuedCompletionStatusEx() has */
-  /* waited for a couple of ms but this is not reflected in the GetTickCount */
-  /* result yet. Therefore whenever GetQueuedCompletionStatus times out */
+  return time.QuadPart;
+}
+
+void uv_timers_init() {
+  const int reps = 100;
+  int i;
+  uint64_t start_time = uv__hrtime();
+  uint64_t end_time;
+  uint64_t avg_time;
+  
+  for (i = 0; i < reps; i++) {
+    end_time = uv__hrtime();
+  }
+
+  avg_time = (end_time - start_time) / reps;
+
+  if (start_time > 0 && avg_time < 100)
+    uv_calc_time_fn = uv__calc_time_qpc;
+  else
+    uv_calc_time_fn = uv__calc_time_gtc;
+}  
+
+void uv_update_time(uv_loop_t* loop) {
+  uint64_t new_time = uv_calc_time_fn(loop);
+
+  /* Whenever GetQueuedCompletionStatus times out */
   /* we'll add the number of ms that it has waited to the current loop time. */
   /* When that happened the loop time might be a little ms farther than what */
   /* we've just computed, and we shouldn't update the loop time. */
-  if (loop->time < time.QuadPart)
-    loop->time = time.QuadPart;
+  if (loop->time < new_time)
+    loop->time = new_time;
 }
 
 

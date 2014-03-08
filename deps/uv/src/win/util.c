@@ -447,9 +447,12 @@ int uv_get_process_title(char* buffer, size_t size) {
 
 
 uint64_t uv_hrtime(void) {
-  LARGE_INTEGER counter;
-
   uv__once_init();
+  return uv__hrtime();
+}
+
+uint64_t uv__hrtime(void) {
+  LARGE_INTEGER counter;
 
   /* If the performance frequency is zero, there's no support. */
   if (hrtime_frequency_ == 0) {

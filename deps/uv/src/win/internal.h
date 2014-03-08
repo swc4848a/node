@@ -229,6 +229,8 @@ void uv_poll_endgame(uv_loop_t* loop, uv_poll_t* handle);
 /*
  * Timers
  */
+void uv_timers_init();
+  
 void uv_timer_endgame(uv_loop_t* loop, uv_timer_t* handle);
 
 DWORD uv_get_poll_timeout(uv_loop_t* loop);
@@ -324,6 +326,7 @@ void uv__fs_poll_endgame(uv_loop_t* loop, uv_fs_poll_t* handle);
  */
 void uv__util_init();
 
+uint64_t uv__hrtime();
 int uv_parent_pid();
 void uv_fatal_error(const int errorno, const char* syscall);
 
