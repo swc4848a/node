@@ -113,6 +113,9 @@ static void uv_init(void) {
 
   /* Initialize utilities */
   uv__util_init();
+
+  /* Initialize timers */
+  uv_timers_init();
 }
 
 
